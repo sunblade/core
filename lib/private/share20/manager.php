@@ -573,6 +573,7 @@ class Manager {
 	 * @return Share[]
 	 */
 	public function getShares($page=0, $perPage=50) {
+		return [];
 	}
 
 	/**
