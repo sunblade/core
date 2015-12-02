@@ -48,6 +48,7 @@ use OC\Files\Cache\Updater;
 use OC\Files\Mount\MoveableMount;
 use OC\Files\Storage\Storage;
 use OC\User\User;
+use OCP\Files\Cache\ICacheEntry;
 use OCP\Files\FileNameTooLongException;
 use OCP\Files\InvalidCharacterInPathException;
 use OCP\Files\InvalidPathException;
@@ -1275,7 +1276,7 @@ class View {
 		if ($storage) {
 			$data = $this->getCacheEntry($storage, $internalPath, $relativePath);
 
-			if (!is_array($data)) {
+			if (!$data instanceof ICacheEntry) {
 				return false;
 			}
 
@@ -1335,7 +1336,7 @@ class View {
 
 			$data = $this->getCacheEntry($storage, $internalPath, $directory);
 
-			if (!is_array($data) || !isset($data['fileid'])) {
+			if (!$data instanceof ICacheEntry || !isset($data['fileid'])) {
 				return [];
 			}
 
@@ -1346,7 +1347,7 @@ class View {
 			/**
 			 * @var \OC\Files\FileInfo[] $files
 			 */
-			$files = array_map(function (array $content) use ($path, $storage, $mount, $sharingDisabled) {
+			$files = array_map(function (ICacheEntry $content) use ($path, $storage, $mount, $sharingDisabled) {
 				if ($sharingDisabled) {
 					$content['permissions'] = $content['permissions'] & ~\OCP\Constants::PERMISSION_SHARE;
 				}
