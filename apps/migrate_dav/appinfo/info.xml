@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<info>
+	<id>migrate_dav</id>
+	<name>Migrate contact and calendar</name>
+	<description>Migrate contact and calendar</description>
+	<licence>AGPL</licence>
+	<author>owncloud.org</author>
+	<version>0.0.1</version>
+	<requiremin>9.0</requiremin>
+	<shipped>true</shipped>
+	<standalone/>
+	<default_enable/>
+</info>
