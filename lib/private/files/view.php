@@ -44,7 +44,6 @@
 namespace OC\Files;
 
 use Icewind\Streams\CallbackWrapper;
-use OC\Files\Cache\Updater;
 use OC\Files\Mount\MoveableMount;
 use OC\Files\Storage\Storage;
 use OC\User\User;
@@ -54,6 +53,7 @@ use OCP\Files\InvalidCharacterInPathException;
 use OCP\Files\InvalidPathException;
 use OCP\Files\NotFoundException;
 use OCP\Files\ReservedWordException;
+use OCP\Files\Storage\ILockingStorage;
 use OCP\IUser;
 use OCP\Lock\ILockingProvider;
 use OCP\Lock\LockedException;
@@ -1836,11 +1836,14 @@ class View {
 		$mount = $this->getMountForLock($absolutePath, $lockMountPoint);
 		if ($mount) {
 			try {
-				$mount->getStorage()->acquireLock(
-					$mount->getInternalPath($absolutePath),
-					$type,
-					$this->lockingProvider
-				);
+				$storage = $mount->getStorage();
+				if ($storage instanceof ILockingStorage) {
+					$storage->acquireLock(
+						$mount->getInternalPath($absolutePath),
+						$type,
+						$this->lockingProvider
+					);
+				}
 			} catch (\OCP\Lock\LockedException $e) {
 				// rethrow with the a human-readable path
 				throw new \OCP\Lock\LockedException(
@@ -1874,11 +1877,14 @@ class View {
 		$mount = $this->getMountForLock($absolutePath, $lockMountPoint);
 		if ($mount) {
 			try {
-				$mount->getStorage()->changeLock(
-					$mount->getInternalPath($absolutePath),
-					$type,
-					$this->lockingProvider
-				);
+				$storage = $mount->getStorage();
+				if ($storage instanceof ILockingStorage) {
+					$storage->changeLock(
+						$mount->getInternalPath($absolutePath),
+						$type,
+						$this->lockingProvider
+					);
+				}
 			} catch (\OCP\Lock\LockedException $e) {
 				// rethrow with the a human-readable path
 				throw new \OCP\Lock\LockedException(
@@ -1909,11 +1915,14 @@ class View {
 
 		$mount = $this->getMountForLock($absolutePath, $lockMountPoint);
 		if ($mount) {
-			$mount->getStorage()->releaseLock(
-				$mount->getInternalPath($absolutePath),
-				$type,
-				$this->lockingProvider
-			);
+			$storage = $mount->getStorage();
+			if ($storage instanceof ILockingStorage) {
+				$storage->releaseLock(
+					$mount->getInternalPath($absolutePath),
+					$type,
+					$this->lockingProvider
+				);
+			}
 		}
 
 		return true;
