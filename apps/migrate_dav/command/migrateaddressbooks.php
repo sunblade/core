@@ -104,7 +104,7 @@ class MigrateAddressbooks extends Command {
 			]);
 
 			$this->migrateBook($book['id'], $newId);
-			$this->migrateShare($book['id'], $newId);
+			$this->migrateShares($book['id'], $newId);
 		}
 	}
 
@@ -137,18 +137,22 @@ class MigrateAddressbooks extends Command {
 	 * @param int $addressBookId
 	 * @param int $newAddressBookId
 	 */
-	private function migrateShare($addressBookId, $newAddressBookId) {
+	private function migrateShares($addressBookId, $newAddressBookId) {
 		$query = $this->dbConnection->getQueryBuilder();
 		$shares = $query->select()->from('share')
 			->where($query->expr()->eq('item_source', $query->createNamedParameter($addressBookId)))
 			->andWhere($query->expr()->eq('item_type', $query->expr()->literal('addressbook')))
-			->andWhere($query->expr()->eq('share_type', $query->expr()->literal(0)))
+			->andWhere($query->expr()->in('share_type', [ $query->expr()->literal(0), $query->expr()->literal(1)]))
 			->execute()
 			->fetchAll();
 
 		$add = array_map(function($s) {
+			$prefix = 'principal:principals/users/';
+			if ($s['share_type'] === 1) {
+				$prefix = 'principal:principals/groups/';
+			}
 			return [
-				'href' => 'principal:principals/users/' . $s['share_with']
+				'href' => $prefix . $s['share_with']
 				];
 		}, $shares);
 
