@@ -23,6 +23,7 @@
     "firewall",
     "firstrunwizard",
     "gallery",
+    "migrate_dav",
     "notifications",
     "objectstore",
     "password_policy",
