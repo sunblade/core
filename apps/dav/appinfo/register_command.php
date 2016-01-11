@@ -26,10 +26,11 @@ use OCA\DAV\Command\SyncSystemAddressBook;
 $config = \OC::$server->getConfig();
 $dbConnection = \OC::$server->getDatabaseConnection();
 $userManager = OC::$server->getUserManager();
+$groupManager = OC::$server->getGroupManager();
 $config = \OC::$server->getConfig();
 $logger = \OC::$server->getLogger();
 
 /** @var Symfony\Component\Console\Application $application */
-$application->add(new CreateAddressBook($userManager, $dbConnection, $config, $logger));
+$application->add(new CreateAddressBook($userManager, $groupManager, $dbConnection, $logger));
 $application->add(new CreateCalendar($userManager, $dbConnection));
-$application->add(new SyncSystemAddressBook($userManager, $dbConnection, $config));
+$application->add(new SyncSystemAddressBook($userManager, $groupManager, $dbConnection, $config));
