@@ -25,6 +25,7 @@ use OCA\DAV\CardDAV\Converter;
 use OCA\DAV\Connector\Sabre\Principal;
 use OCP\IConfig;
 use OCP\IDBConnection;
+use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
 use Sabre\CardDAV\Plugin;
@@ -42,6 +43,9 @@ class SyncSystemAddressBook extends Command {
 	/** @var IUserManager */
 	protected $userManager;
 
+	/** @var IGroupManager */
+	protected $groupManager;
+
 	/** @var \OCP\IDBConnection */
 	protected $dbConnection;
 
@@ -56,9 +60,10 @@ class SyncSystemAddressBook extends Command {
 	 * @param IDBConnection $dbConnection
 	 * @param IConfig $config
 	 */
-	function __construct(IUserManager $userManager, IDBConnection $dbConnection, IConfig $config) {
+	function __construct(IUserManager $userManager, IGroupManager $groupManager, IDBConnection $dbConnection, IConfig $config) {
 		parent::__construct();
 		$this->userManager = $userManager;
+		$this->groupManager = $groupManager;
 		$this->dbConnection = $dbConnection;
 		$this->config = $config;
 	}
@@ -75,7 +80,8 @@ class SyncSystemAddressBook extends Command {
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$principalBackend = new Principal(
-				$this->userManager
+				$this->userManager,
+				$this->groupManager
 		);
 
 		$this->backend = new CardDavBackend($this->dbConnection, $principalBackend);
