@@ -8,9 +8,11 @@ use OCA\DAV\Connector\Sabre\Principal;
 use OCP\IConfig;
 use OCP\IDBConnection;
 use OCP\ILogger;
+use OCP\IUser;
 use OCP\IUserManager;
 use Sabre\CardDAV\Plugin;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -70,7 +72,15 @@ class MigrateAddressbooks extends Command {
 			}
 			$this->migrateForUser($user);
 		}
-		throw new \InvalidArgumentException("Not implemented yet");
+		$progressBar = new ProgressBar($output);
+		$progressBar->start();
+		$this->userManager->callForAllUsers(function($user) use ($progressBar) {
+			$progressBar->advance();
+			/** @var IUser $user*/
+			$this->migrateForUser($user->getUID());
+
+		});
+		$progressBar->finish();
 	}
 
 	private function verifyPreconditions() {
