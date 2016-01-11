@@ -265,6 +265,7 @@ Feature: provisioning
 		And apps returned are
 			| files |
 			| dav |
+			| migrate_dav |
 			| files_sharing |
 			| files_trashbin |
 			| files_versions |
