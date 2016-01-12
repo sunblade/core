@@ -48,7 +48,8 @@ class Application extends App {
 			$db = $c->getServer()->getDatabaseConnection();
 			$logger = $c->getServer()->getLogger();
 			$principal = new \OCA\DAV\Connector\Sabre\Principal(
-				$c->getServer()->getUserManager()
+				$c->getServer()->getUserManager(),
+				$c->getServer()->getGroupManager()
 			);
 			return new \OCA\DAV\CardDAV\CardDavBackend($db, $principal, $logger);
 		});
