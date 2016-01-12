@@ -46,6 +46,7 @@
 
 			this.collection = new OCA.SystemTags.SystemTagsMappingCollection([], {objectType: 'files'});
 			this.collection.on('sync', this._onTagsChanged, this);
+			this.collection.on('remove', this._onTagsChanged, this);
 		},
 
 		setFileInfo: function(fileInfo) {
@@ -73,7 +74,7 @@
 			if (this.completeCollection.fetched) {
 				// cached
 				query.callback({
-					results: self.completeCollection.models
+					results: self.completeCollection.toJSON()
 				});
 				return;
 			}
@@ -82,7 +83,7 @@
 				success: function() {
 					self.completeCollection.fetched = true;
 					query.callback({
-						results: self.completeCollection.models
+						results: self.completeCollection.toJSON()
 					});
 				}
 			});
@@ -108,48 +109,58 @@
 					return tag.id;
 				},
 				initSelection: function(element, callback) {
-					callback(self.collection.models);
+					callback(self.collection.toJSON());
 				},
 				formatResult: function(tag) {
-					return '<span>' + tag.get('name') + '</span>';
+					return '<span>' + tag.name + '</span>';
 				},
 				formatSelection: function(tag) {
-					return '<span>' + tag.get('name') + '</span>';
+					return '<span>' + tag.name + '</span>';
 				},
 				createSearchChoice: function(term) {
 					if (!self._newTag) {
 						self._dummyId--;
-						self._newTag = new OCA.SystemTags.SystemTagModel({
+						self._newTag = {
 							id: self._dummyId,
-							name: term,
-							userVisible: true,
-							userAssignable: true
-						});
+							name: term
+						};
 					} else {
-						self._newTag.set('name', term);
+						self._newTag.name = term;
 					}
 
 					return self._newTag;
 				}
-			}).on('change', function(e) {
-				if (e.added && e.added.id < 0) {
-					// newly created tag
-					self._newTag = self.collection.create({
-						name: self._newTag.get('name'),
-						userVisible: self._newTag.get('userVisible'),
-						userAssignable: self._newTag.get('userAssignable'),
-					});
-					self.completeCollection.fetched = false;
-					// FIXME: id will change asynchronously
-					// TODO: add later when id is known
-				} else {
-					if (e.added) {
-						// put the tag into the mapping collection
-						self.collection.create(e.added.toJSON());
-					} else if (e.removed) {
-						self.collection.get(e.removed.id).destroy();
+			}).on('select2-selecting', function(e) {
+				if (e.object && e.object.id < 0) {
+					// newly created tag, check if existing
+					var existingTags = self.completeCollection.where({name: e.object.name});
+
+					if (existingTags.length) {
+						// create mapping to existing tag
+						self.collection.create(existingTags[0].toJSON(), {
+							error: function(model, response) {
+								if (response.status === 409) {
+									self._onTagsChanged();
+									OC.Notification.showTemporary(t('core', 'Tag already exists'));
+								}
+							}
+						});
+					} else {
+						// create a new mapping
+						self.collection.create({
+							name: e.object.name,
+							userVisible: true,
+							userAssignable: true,
+						});
+						self.completeCollection.fetched = false;
 					}
+				} else {
+					// put the tag into the mapping collection
+					self.collection.create(e.object);
 				}
+				self._newTag = null;
+			}).on('select2-removing', function(e) {
+				self.collection.get(e.choice.id).destroy();
 			});
 
 			this.delegateEvents();
