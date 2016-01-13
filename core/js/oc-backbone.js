@@ -13,16 +13,9 @@ if(!_.isUndefined(Backbone)) {
 	OC.Backbone = Backbone.noConflict();
 
 	(function() {
-		var collectionMethodMap = {
+		var methodMap = {
 			'create': 'POST',
-			'update': 'PUT',
-			'patch':  'PROPPATCH',
-			'delete': 'DELETE',
-			'read':   'PROPFIND'
-		};
-		var modelMethodMap = {
-			'create': 'POST',
-			'update': 'PUT',
+			'update': 'PROPPATCH',
 			'patch':  'PROPPATCH',
 			'delete': 'DELETE',
 			'read':   'PROPFIND'
@@ -37,13 +30,12 @@ if(!_.isUndefined(Backbone)) {
 		 * DAV transport
 		 */
 		OC.Backbone.davSync = function(method, model, options) {
-			var params = {};
+			var params = {type: methodMap[method]};
 			var isCollection = (model instanceof OC.Backbone.Collection);
 
-			if (isCollection) {
-				params.type = options.type || collectionMethodMap[method];
-			} else {
-				params.type = options.type || modelMethodMap[method];
+			if (method === 'update' && (model.usePUT || (model.collection && model.collection.usePUT))) {
+				// use PUT instead of PROPPATCH
+				params.type = 'PUT';
 			}
 
 			// Ensure that we have a URL.
@@ -61,12 +53,17 @@ if(!_.isUndefined(Backbone)) {
 				params.processData = false;
 			}
 
-			if (params.type === 'PROPFIND') {
-				if (model.davProperties) {
-					if (_.isFunction(model.davProperties)) {
-						params.davProperties = model.davProperties.call(model);
+			if (params.type === 'PROPFIND' || params.type === 'PROPPATCH') {
+				var davProperties = model.davProperties;
+				if (!davProperties && model.model) {
+					// use dav properties from model in case of collection
+					davProperties = model.model.prototype.davProperties;
+				}
+				if (davProperties) {
+					if (_.isFunction(davProperties)) {
+						params.davProperties = davProperties.call(model);
 					} else {
-						params.davProperties = model.davProperties;
+						params.davProperties = davProperties;
 					}
 				}
 
@@ -145,6 +142,20 @@ if(!_.isUndefined(Backbone)) {
 			return status >= 200 && status <= 299;
 		};
 
+		var convertModelAttributesToDavProperties = function(model, davProperties) {
+			var props = {};
+			var key;
+			for (key in model.changed) {
+				var changedProp = davProperties[key];
+				if (!changedProp) {
+					console.warn('No matching DAV property for property "' + key);
+					continue;
+				}
+				props[changedProp] = model.changed[key];
+			}
+			return props;
+		};
+
 		OC.Backbone.davCall = function(options, model) {
 			var client = new dav.Client({
 				baseUrl: options.url,
@@ -186,6 +197,19 @@ if(!_.isUndefined(Backbone)) {
 						}
 					} else if (_.isFunction(options.error)) {
 						options.error(response);
+					}
+				});
+			} else if (options.type === 'PROPPATCH') {
+				client.propPatch(
+					options.url,
+					convertModelAttributesToDavProperties(model, options.davProperties)
+				).then(function(result) {
+					if (isSuccessStatus(result.status)) {
+						if (_.isFunction(options.success)) {
+							options.success(result.body);
+						}
+					} else if (_.isFunction(options.error)) {
+						options.error(result);
 					}
 				});
 			} else {
