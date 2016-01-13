@@ -49,7 +49,7 @@ class UserStoragesServiceTest extends StoragesServiceTest {
 	public function setUp() {
 		parent::setUp();
 
-		$this->globalStoragesService = new GlobalStoragesService($this->backendService, $this->dbConfig);
+		$this->globalStoragesService = new GlobalStoragesService($this->backendService, $this->dbConfig, $this->getMock('\OCP\Files\Config\OCP\Files\Config'));
 
 		$this->userId = $this->getUniqueID('user_');
 		$this->createUser($this->userId, $this->userId);
@@ -62,7 +62,7 @@ class UserStoragesServiceTest extends StoragesServiceTest {
 			->method('getUser')
 			->will($this->returnValue($this->user));
 
-		$this->service = new UserStoragesService($this->backendService, $this->dbConfig, $userSession);
+		$this->service = new UserStoragesService($this->backendService, $this->dbConfig, $userSession, $this->getMock('\OCP\Files\Config\OCP\Files\Config'));
 	}
 
 	private function makeTestStorageData() {
