@@ -1,0 +1,36 @@
+.systemtags-select2-dropdown .select2-selected {
+	display: list-item;
+	background-color: #f8f8f8;
+}
+.systemtags-select2-dropdown .select2-result-label .checkmark {
+	visibility: hidden;
+}
+
+.systemtags-select2-dropdown .select2-selected .select2-result-label .checkmark {
+	visibility: visible;
+}
+
+.systemtags-select2-dropdown .select2-result-label .icon {
+	display: inline-block;
+}
+
+.systemtags-actions {
+	float: right;
+}
+
+.systemtags-select2-container .select2-choices {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	padding: 5px;
+}
+.systemtags-select2-container .select2-choices .select2-search-choice {
+	border: 0;
+	box-shadow: none;
+	background: none;
+	padding: 0;
+	margin: 0;
+}
+.systemtags-select2-container .select2-choices .select2-search-choice-close {
+	display: none;
+}
+

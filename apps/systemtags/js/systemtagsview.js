@@ -14,6 +14,16 @@
 		'<input type="hidden" name="tags" value="" style="width: 100%"/>' +
 		'</div>';
 
+	var RESULT_TEMPALTE =
+		'<span {{#if isNew}}class="isNew"{{/if}}">' +
+		'    <span class="checkmark icon icon-checkmark"></span>' +
+		'    <span class="label">{{name}}</span>' +
+		'    <span class="systemtags-actions">' +
+		'        <span class="rename icon icon-rename"></span>' +
+		'        <span class="delete icon icon-delete"></span>' +
+		'    </span>' +
+		'</span>';
+
 	/**
 	 * @class OCA.SystemTags.SystemTagsView
 	 * @classdesc
@@ -102,7 +112,10 @@
 			this.$tagsField = this.$el.find('[name=tags]');
 			this.$tagsField.select2({
 				placeholder: t('files_external', 'Global tags'),
-				allowClear: true,
+				containerCssClass: 'systemtags-select2-container',
+				dropdownCssClass: 'systemtags-select2-dropdown',
+				closeOnSelect: false,
+				allowClear: false,
 				multiple: true,
 				query: _.bind(this._queryTagsAutocomplete, this),
 				id: function(tag) {
@@ -112,17 +125,26 @@
 					callback(self.collection.toJSON());
 				},
 				formatResult: function(tag) {
-					return '<span>' + tag.name + '</span>';
+					// TODO: use handlebars
+					return '<span>' +
+						'    <span class="checkmark icon icon-checkmark"></span>' +
+						'    <span class="label">' + escapeHTML(tag.name) + '</span>' +
+						'    <span class="systemtags-actions">' +
+						'        <span class="rename icon icon-rename"></span>' +
+						'        <span class="delete icon icon-delete"></span>' +
+						'    </span>' +
+						'</span>';
 				},
 				formatSelection: function(tag) {
-					return '<span>' + tag.name + '</span>';
+					return '<span>' + escapeHTML(tag.name) + ',&nbsp;</span>';
 				},
 				createSearchChoice: function(term) {
 					if (!self._newTag) {
 						self._dummyId--;
 						self._newTag = {
 							id: self._dummyId,
-							name: term
+							name: term,
+							isNew: true
 						};
 					} else {
 						self._newTag.name = term;
@@ -168,5 +190,43 @@
 	});
 
 	OCA.SystemTags.SystemTagsView = SystemTagsView;
+
+	// FIXME HACK from http://stackoverflow.com/a/27466159
+	// FIXME: move to some other place / make a plugin out of it
+	Select2.class.multi.prototype.findHighlightableChoices = function () {
+		return this.results.find(".select2-result-selectable:not(.select2-disabled)");
+	};
+
+	var Select2TriggerSelect = Select2.class.multi.prototype.triggerSelect;
+
+	Select2.class.multi.prototype.triggerSelect = function (data) {
+		if (this.val().indexOf(this.id(data)) !== -1) {
+
+			var val = this.id(data);
+			var evt = $.Event("select2-removing");
+			evt.val = val;
+			evt.choice = data;
+			this.opts.element.trigger(evt);
+
+			if (evt.isDefaultPrevented()) {
+				return false;
+			}
+
+			var self = this;
+			this.results.find('.select2-result.select2-selected').each(function () {
+				var $this = $(this);
+				if (self.id($this.data('select2-data')) === val) {
+					$this.removeClass('select2-selected');
+				}
+			});
+
+			this.opts.element.trigger({ type: "select2-removed", val: this.id(data), choice: data });
+			this.triggerChange({ removed: data });
+
+		} else {
+			return Select2TriggerSelect.apply(this, arguments);
+		}
+	}
+
 })();
 

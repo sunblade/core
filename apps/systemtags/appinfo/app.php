@@ -32,5 +32,6 @@ $eventDispatcher->addListener(
 		\OCP\Util::addScript('systemtags', 'systemtagscollection');
 		\OCP\Util::addScript('systemtags', 'systemtagsview');
 		\OCP\Util::addScript('systemtags', 'filesplugin');
+		\OCP\Util::addStyle('systemtags', 'systemtagsview');
 	}
 );
