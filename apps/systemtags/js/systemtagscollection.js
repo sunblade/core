@@ -28,8 +28,6 @@
 
 		model: OCA.SystemTags.SystemTagModel,
 
-		davProperties: OCA.SystemTags.SystemTagModel.prototype.davProperties,
-
 		url: function() {
 			return OC.linkToRemote('dav') + '/systemtags/';
 		},

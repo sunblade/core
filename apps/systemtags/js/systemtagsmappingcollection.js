@@ -22,6 +22,11 @@
 		sync: OC.Backbone.davSync,
 
 		/**
+		 * Use PUT instead of PROPPATCH
+		 */
+		usePUT: true,
+
+		/**
 		 * Id of the file for which to filter activities by
 		 *
 		 * @var int
@@ -36,8 +41,6 @@
 		_objectType: 'files',
 
 		model: OCA.SystemTags.SystemTagModel,
-
-		davProperties: OCA.SystemTags.SystemTagModel.prototype.davProperties,
 
 		url: function() {
 			return OC.linkToRemote('dav') + '/systemtags-relations/' + this._objectType + '/' + this._objectId;
