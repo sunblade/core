@@ -9,6 +9,11 @@
  */
 
 (function() {
+
+	function filterFunction(model, term) {
+		return model.get('name').substr(0, term.length) === term;
+	}
+
 	/**
 	 * @class OCA.SystemTags.SystemTagsCollection
 	 * @classdesc
@@ -27,6 +32,12 @@
 
 		url: function() {
 			return OC.linkToRemote('dav') + '/systemtags/';
+		},
+
+		filterByName: function(name) {
+			return this.filter(function(model) {
+				return filterFunction(model, name);
+			});
 		}
 	});
 

@@ -2,8 +2,20 @@
 	display: list-item;
 	background-color: #f8f8f8;
 }
+.systemtags-select2-dropdown .select2-highlighted,
+.systemtags-select2-dropdown .select2-selected.select2-highlighted {
+	background: #3875d7;
+}
+
+.systemtags-select2-dropdown .select2-highlighted {
+	color: #000000;
+}
 .systemtags-select2-dropdown .select2-result-label .checkmark {
 	visibility: hidden;
+}
+
+.systemtags-select2-dropdown .select2-result-label .new-item .systemtags-actions {
+	display: none;
 }
 
 .systemtags-select2-dropdown .select2-selected .select2-result-label .checkmark {
@@ -29,8 +41,14 @@
 	background: none;
 	padding: 0;
 	margin: 0;
+	line-height: 20px;
 }
 .systemtags-select2-container .select2-choices .select2-search-choice-close {
 	display: none;
+}
+.systemtags-select2-container .select2-choices .select2-search-field input {
+	margin: 0;
+	padding: 0;
+	line-height: 20px;
 }
 

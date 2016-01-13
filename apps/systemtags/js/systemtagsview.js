@@ -14,15 +14,19 @@
 		'<input type="hidden" name="tags" value="" style="width: 100%"/>' +
 		'</div>';
 
-	var RESULT_TEMPALTE =
-		'<span {{#if isNew}}class="isNew"{{/if}}">' +
+	var RESULT_TEMPLATE =
+		'<span class="systemtags-item{{#if isNew}} new-item{{/if}}" data-id="{{id}}">' +
 		'    <span class="checkmark icon icon-checkmark"></span>' +
 		'    <span class="label">{{name}}</span>' +
 		'    <span class="systemtags-actions">' +
-		'        <span class="rename icon icon-rename"></span>' +
-		'        <span class="delete icon icon-delete"></span>' +
+		'        <a href="#" class="rename icon icon-rename"></a>' +
+		'        <a href="#" class="delete icon icon-delete"></a>' +
 		'    </span>' +
 		'</span>';
+
+	function convertResult(model) {
+		return model.toJSON();
+	}
 
 	/**
 	 * @class OCA.SystemTags.SystemTagsView
@@ -57,6 +61,32 @@
 			this.collection = new OCA.SystemTags.SystemTagsMappingCollection([], {objectType: 'files'});
 			this.collection.on('sync', this._onTagsChanged, this);
 			this.collection.on('remove', this._onTagsChanged, this);
+
+			_.bindAll(this, '_onClickRenameTag', '_onClickDeleteTag', '_onSelectTag', '_onDeselectTag', '_onOpenDropDown');
+		},
+
+		_onClickRenameTag: function(ev) {
+			var $item = $(ev.target).closest('.systemtags-item');
+			var tagId = $item.attr('data-id');
+			var tagModel = this.completeCollection.get(tagId);
+			// TODO: replace with inline field
+			var newName = prompt('Rename tag', tagModel.get('name'));
+			if (newName && newName !== tagModel.get('name')) {
+				tagModel.save({'name': newName});
+				// TODO: spinner, and only change text after finished saving
+				$item.find('.label').text(newName);
+			}
+			return false;
+		},
+
+		_onClickDeleteTag: function(ev) {
+			var $item = $(ev.target).closest('.systemtags-item');
+			var tagId = $item.attr('data-id');
+			this.completeCollection.get(tagId).destroy();
+			this.collection.remove(tagId);
+			$item.closest('.select2-result').remove();
+			// TODO: spinner
+			return false;
 		},
 
 		setFileInfo: function(fileInfo) {
@@ -78,13 +108,44 @@
 			this.$tagsField.select2('val', this.collection.getTagIds());
 		},
 
+		_onSelectTag: function(e) {
+			var self = this;
+			if (e.object && e.object.id < 0) {
+				// newly created tag, check if existing
+				var existingTags = this.completeCollection.where({name: e.object.name});
+
+				if (existingTags.length) {
+					// create mapping to existing tag
+					self.collection.create(existingTags[0].toJSON(), {
+						error: function(model, response) {
+							if (response.status === 409) {
+								self._onTagsChanged();
+								OC.Notification.showTemporary(t('core', 'Tag already exists'));
+							}
+						}
+					});
+				} else {
+					// create a new mapping
+					this.collection.create({
+						name: e.object.name,
+						userVisible: true,
+						userAssignable: true,
+					});
+					this.completeCollection.fetched = false;
+				}
+			} else {
+				// put the tag into the mapping collection
+				this.collection.create(e.object);
+			}
+			this._newTag = null;
+		},
+
 		_queryTagsAutocomplete: function(query) {
-			// TODO: set filter
 			var self = this;
 			if (this.completeCollection.fetched) {
 				// cached
 				query.callback({
-					results: self.completeCollection.toJSON()
+					results: _.map(self.completeCollection.filterByName(query.term), convertResult)
 				});
 				return;
 			}
@@ -93,10 +154,28 @@
 				success: function() {
 					self.completeCollection.fetched = true;
 					query.callback({
-						results: self.completeCollection.toJSON()
+						results: _.map(self.completeCollection.filterByName(query.term), convertResult)
 					});
 				}
 			});
+		},
+
+		_onDeselectTag: function(e) {
+			this.collection.get(e.choice.id).destroy();
+		},
+
+		_onOpenDropDown: function(e) {
+			var $dropDown = $(e.target).select2('dropdown');
+			// register events for inside the dropdown
+			$dropDown.on('mouseup', '.rename', this._onClickRenameTag);
+			$dropDown.on('mouseup', '.delete', this._onClickDeleteTag);
+		},
+
+		_formatDropDownResult: function(data) {
+			if (!this._resultTemplate) {
+				this._resultTemplate = Handlebars.compile(RESULT_TEMPLATE);
+			}
+			return this._resultTemplate(data);
 		},
 
 		/**
@@ -111,7 +190,7 @@
 			this.$el.find('[title]').tooltip({placement: 'bottom'});
 			this.$tagsField = this.$el.find('[name=tags]');
 			this.$tagsField.select2({
-				placeholder: t('files_external', 'Global tags'),
+				placeholder: t('core', 'Global tags'),
 				containerCssClass: 'systemtags-select2-container',
 				dropdownCssClass: 'systemtags-select2-dropdown',
 				closeOnSelect: false,
@@ -124,17 +203,7 @@
 				initSelection: function(element, callback) {
 					callback(self.collection.toJSON());
 				},
-				formatResult: function(tag) {
-					// TODO: use handlebars
-					return '<span>' +
-						'    <span class="checkmark icon icon-checkmark"></span>' +
-						'    <span class="label">' + escapeHTML(tag.name) + '</span>' +
-						'    <span class="systemtags-actions">' +
-						'        <span class="rename icon icon-rename"></span>' +
-						'        <span class="delete icon icon-delete"></span>' +
-						'    </span>' +
-						'</span>';
-				},
+				formatResult: _.bind(this._formatDropDownResult, this),
 				formatSelection: function(tag) {
 					return '<span>' + escapeHTML(tag.name) + ',&nbsp;</span>';
 				},
@@ -152,40 +221,16 @@
 
 					return self._newTag;
 				}
-			}).on('select2-selecting', function(e) {
-				if (e.object && e.object.id < 0) {
-					// newly created tag, check if existing
-					var existingTags = self.completeCollection.where({name: e.object.name});
-
-					if (existingTags.length) {
-						// create mapping to existing tag
-						self.collection.create(existingTags[0].toJSON(), {
-							error: function(model, response) {
-								if (response.status === 409) {
-									self._onTagsChanged();
-									OC.Notification.showTemporary(t('core', 'Tag already exists'));
-								}
-							}
-						});
-					} else {
-						// create a new mapping
-						self.collection.create({
-							name: e.object.name,
-							userVisible: true,
-							userAssignable: true,
-						});
-						self.completeCollection.fetched = false;
-					}
-				} else {
-					// put the tag into the mapping collection
-					self.collection.create(e.object);
-				}
-				self._newTag = null;
-			}).on('select2-removing', function(e) {
-				self.collection.get(e.choice.id).destroy();
-			});
+			})
+				.on('select2-selecting', this._onSelectTag)
+				.on('select2-removing', this._onDeselectTag)
+				.on('select2-open', this._onOpenDropDown);
 
 			this.delegateEvents();
+		},
+
+		remove: function() {
+			this.$tagsField.select2('destroy');
 		}
 	});
 
