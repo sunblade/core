@@ -80,7 +80,7 @@ class SyncService {
 	 * @return array|null
 	 * @throws \Sabre\DAV\Exception\BadRequest
 	 */
-	protected function ensureSystemAddressBookExists($principal, $id, $properties) {
+	public function ensureSystemAddressBookExists($principal, $id, $properties) {
 		$book = $this->backend->getAddressBooksByUri($id);
 		if (!is_null($book)) {
 			return $book;
