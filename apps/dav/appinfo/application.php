@@ -20,7 +20,10 @@
  */
 namespace OCA\Dav\AppInfo;
 
+use OCA\DAV\CardDAV\CardDavBackend;
 use OCA\DAV\CardDAV\ContactsManager;
+use OCA\DAV\CardDAV\SyncService;
+use OCA\DAV\HookManager;
 use \OCP\AppFramework\App;
 use OCP\AppFramework\IAppContainer;
 use OCP\Contacts\IManager;
@@ -39,6 +42,21 @@ class Application extends App {
 		$container->registerService('ContactsManager', function($c) {
 			/** @var IAppContainer $c */
 			return new ContactsManager(
+				$c->query('CardDavBackend')
+			);
+		});
+
+		$container->registerService('HookManager', function($c) {
+			/** @var IAppContainer $c */
+			return new HookManager(
+				$c->getServer()->getUserManager(),
+				$c->query('SyncService')
+			);
+		});
+
+		$container->registerService('SyncService', function($c) {
+			/** @var IAppContainer $c */
+			return new SyncService(
 				$c->query('CardDavBackend')
 			);
 		});
@@ -63,6 +81,16 @@ class Application extends App {
 		/** @var ContactsManager $cm */
 		$cm = $this->getContainer()->query('ContactsManager');
 		$cm->setupContactsProvider($contactsManager, $userID);
+	}
+
+	public function registerHooks() {
+		/** @var HookManager $hm */
+		$hm = $this->getContainer()->query('HookManager');
+		$hm->setup();
+	}
+
+	public function getSyncService() {
+		return $this->getContainer()->query('SyncService');
 	}
 
 }
