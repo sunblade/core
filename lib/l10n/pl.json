@@ -32,7 +32,7 @@
     "_%n hour ago_::_%n hours ago_" : ["%n godzinę temu","%n godzin temu","%n godzin temu"],
     "_%n minute ago_::_%n minutes ago_" : ["%n minute temu","%n minut temu","%n minut temu"],
     "seconds ago" : "sekund temu",
-    "web services under your control" : "Kontrolowane serwisy",
+    "web services under your control" : "Usługi sieciowe pod twoją kontrolą",
     "App directory already exists" : "Katalog aplikacji już isnieje",
     "Can't create app folder. Please fix permissions. %s" : "Nie mogę utworzyć katalogu aplikacji. Proszę popraw uprawnienia. %s",
     "No source specified when installing app" : "Nie określono źródła  podczas instalacji aplikacji",
